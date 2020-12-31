@@ -1,0 +1,43 @@
+pipeline {
+    agent {
+        docker {
+            image 'zip-job-docker' 
+        }
+    }
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    sh 'python3 /tmp/zip_job.py'
+                }
+            }
+        }
+        stage ('Publish') {
+            steps {
+                rtUpload (
+                    buildName: JOB_NAME,
+                    buildNumber: BUILD_NUMBER,
+                    serverId: 'artifactory-telaviv',
+                    specPath: '$WORKSPACE/template.json',
+                 )
+            }
+        }
+                
+    }
+ 
+    post { 
+        failure { 
+          emailext body: 'failed:  ${env.BUILD_NUMBER} -- ${env.JOB_NAME}',
+                subject: 'failed:  ${env.BUILD_NUMBER} -- ${env.JOB_NAME}',
+                to: 'failed_xyz@gmail.com'
+        }
+        success {
+                emailext body: 'Completed: ${env.BUILD_NUMBER} -- ${env.JOB_NAME}',
+                subject: 'Completed: ${env.BUILD_NUMBER} -- ${env.JOB_NAME}',
+                to: 'success_xyz@gmail.com'
+        }
+        always {
+            sh 'rm -rf $WORKSPACE/*'
+        }
+    }
+}

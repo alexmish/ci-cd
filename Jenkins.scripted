@@ -1,0 +1,40 @@
+node {
+    try{
+        docker.image('zip-job-docker').inside {
+            stage('Build') {
+                out = sh(script: "python3 /tmp/zip_job.py", returnStatus: true)
+                if (out) {
+                    currentBuild.rawBuild.result = Result.FAILURE
+                }
+            stage('publish') {
+                def server = Artifactory.server 'artifactory-telaviv'
+                def uploadSpec = readFile(file: 'template.json')
+                println(uploadSpec)
+                // // Upload to Artifactory.
+                def buildInfo = server.upload spec: uploadSpec
+            }
+            stage ('Removing files') {
+                sh 'rm -rf $WORKSPACE/*'
+            }
+            stage('Notification'){
+                emailext (
+                    subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                    body: """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+                    <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
+                    to: "success_xyz@gmail.com"
+                )
+            }
+        }
+        }
+    }
+    catch (Exception err) {
+         println("Job Failed")
+         emailext (
+                    subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                    body: """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+                    <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
+                    to: "failed_xyz@gmail.com"
+                )
+        currentBuild.rawBuild.result = Result.FAILURE
+    }
+}
