@@ -1,0 +1,21 @@
+FROM ubuntu:latest
+
+ENV VERSION "1.2.0"
+RUN mkdir -p /var/run/sshd
+RUN apt -y update && apt install -y openjdk-14-jdk-headless \
+    openssh-server \
+    vim \
+    zip \
+    unzip \
+    python3 && \
+    rm -rf /var/lib/apt
+
+RUN ssh-keygen -A
+ADD ./sshd_config /etc/ssh/sshd_config
+RUN echo root:password | chpasswd
+
+COPY ./scripts/ /tmp
+
+RUN chmod +x /tmp/start.sh
+EXPOSE 22
+CMD ["sh", "-c", "/tmp/start.sh"]

@@ -1,0 +1,10 @@
+workflow-aggregator
+git
+ssh
+ssh-agent
+docker-plugin
+docker-workflow
+docker-build-step
+dockerhub-notification
+oauth-credentials
+artifactory
